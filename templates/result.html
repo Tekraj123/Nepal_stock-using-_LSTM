@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ symbol }} — 7-Day Forecast | NEPSE AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="36" height="36" rx="10" fill="#0F4C81"/>
+            <polyline points="6,26 12,17 18,21 24,12 30,8"
+              stroke="#38BDF8" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="30" cy="8" r="2.5" fill="#38BDF8"/>
+          </svg>
+        </div>
+        <div>
+          <div class="logo-name">NEPSE<span>AI</span></div>
+          <div class="logo-sub">Stock Predictor</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="/" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Predict
+        </a>
+        <a href="#" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+          </svg>
+          Dashboard
+        </a>
+        <a href="#" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          History
+        </a>
+      </nav>
+
+      <!-- Sidebar: symbol summary box -->
+      <div class="side-summary">
+        <div class="side-sym">{{ symbol }}</div>
+        <div class="side-label">7-day forecast</div>
+        <div class="side-divider"></div>
+
+        {# Build sorted day list from dict keys e.g. "Day 1", "Day 2" … #}
+        {% set days = stock_value | list | sort %}
+        {% set prices = [] %}
+        {% for d in days %}{% if prices.append(stock_value[d]) %}{% endif %}{% endfor %}
+
+        {% set first = prices[0] %}
+        {% set last  = prices[-1] %}
+        {% set delta = ((last - first) / first * 100) | round(2) %}
+
+        <div class="side-price">NPR {{ '{:,.2f}'.format(last) }}</div>
+        <div class="side-chg {% if delta >= 0 %}up{% else %}dn{% endif %}">
+          {% if delta >= 0 %}▲{% else %}▼{% endif %} {{ delta | abs }}% over 7 days
+        </div>
+        <a href="/" class="back-btn">← New prediction</a>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-note">Model: Random Forest</div>
+        <div class="sidebar-note">Horizon: 7-day forecast</div>
+      </div>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+
+      <header class="topbar">
+        <div>
+          <div class="result-eyebrow">7-Day Price Forecast</div>
+          <h1 class="page-title">{{ symbol }}</h1>
+          <p class="page-sub">Generated on <span id="todayDate"></span></p>
+        </div>
+        <a href="/" class="new-search-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          New Search
+        </a>
+      </header>
+
+      {# ── Collect sorted data ── #}
+      {% set days   = stock_value | list | sort %}
+      {% set prices = [] %}
+      {% for d in days %}{% if prices.append(stock_value[d]) %}{% endif %}{% endfor %}
+
+      {% set first = prices[0] %}
+      {% set last  = prices[-1] %}
+      {% set delta = ((last - first) / first * 100) | round(2) %}
+      {% set max_p = prices | max %}
+      {% set min_p = prices | min %}
+
+      <!-- ── Metric cards ── -->
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-label">Day 1 Price</div>
+          <div class="metric-value">NPR {{ '{:,.2f}'.format(first) }}</div>
+          <div class="metric-sub">Starting estimate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Day 7 Price</div>
+          <div class="metric-value">NPR {{ '{:,.2f}'.format(last) }}</div>
+          <div class="metric-sub {% if delta >= 0 %}up{% else %}dn{% endif %}">
+            {% if delta >= 0 %}▲{% else %}▼{% endif %} {{ delta | abs }}% change
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">7-Day High</div>
+          <div class="metric-value up">NPR {{ '{:,.2f}'.format(max_p) }}</div>
+          <div class="metric-sub">Peak forecast</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">7-Day Low</div>
+          <div class="metric-value dn">NPR {{ '{:,.2f}'.format(min_p) }}</div>
+          <div class="metric-sub">Trough forecast</div>
+        </div>
+      </div>
+
+      <!-- ── Forecast Chart ── -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Price Trend — {{ symbol }}</h2>
+          <div class="legend">
+            <span class="legend-dot blue"></span><span class="legend-text">Predicted price (NPR)</span>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="forecastChart" aria-label="7-day stock forecast line chart for {{ symbol }}"></canvas>
+        </div>
+      </div>
+
+      <!-- ── Change Chart ── -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Day-over-Day Change (%)</h2>
+        </div>
+        <div class="chart-wrap short">
+          <canvas id="changeChart" aria-label="Daily percentage change bar chart for {{ symbol }}"></canvas>
+        </div>
+      </div>
+
+      <!-- ── Forecast Table ── -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Day-by-Day Breakdown</h2>
+        </div>
+        <div class="table-scroll">
+          <table class="forecast-table">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Predicted Price (NPR)</th>
+                <th>Change from Day 1</th>
+                <th>Day-over-Day</th>
+                <th>Signal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for i in range(days | length) %}
+                {% set price = prices[i] %}
+                {% set from_first = ((price - first) / first * 100) | round(2) %}
+                {% if i == 0 %}
+                  {% set dod = 0.0 %}
+                {% else %}
+                  {% set dod = ((price - prices[i-1]) / prices[i-1] * 100) | round(2) %}
+                {% endif %}
+
+                {% if dod | abs > 2 %}
+                  {% set signal = "Strong Buy" if dod >= 0 else "Strong Sell" %}
+                  {% set sig_cls = "badge-sbuy" if dod >= 0 else "badge-ssell" %}
+                {% elif dod | abs > 0.3 %}
+                  {% set signal = "Buy" if dod >= 0 else "Sell" %}
+                  {% set sig_cls = "badge-buy" if dod >= 0 else "badge-sell" %}
+                {% else %}
+                  {% set signal = "Hold" %}
+                  {% set sig_cls = "badge-hold" %}
+                {% endif %}
+
+                <tr>
+                  <td class="day-cell">{{ days[i] }}</td>
+                  <td><strong>{{ '{:,.2f}'.format(price) }}</strong></td>
+                  <td class="{% if from_first >= 0 %}up{% else %}dn{% endif %}">
+                    {% if from_first >= 0 %}▲{% else %}▼{% endif %} {{ from_first | abs }}%
+                  </td>
+                  <td class="{% if dod >= 0 %}up{% else %}dn{% endif %}">
+                    {% if i == 0 %}—{% else %}{% if dod >= 0 %}▲{% else %}▼{% endif %} {{ dod | abs }}%{% endif %}
+                  </td>
+                  <td><span class="badge {{ sig_cls }}">{{ signal }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="disclaimer">
+        ⚠️ Forecasts are generated by a machine learning model trained on historical NEPSE data.
+        Past performance does not guarantee future results. This is <strong>not financial advice</strong>.
+        Always consult a certified financial professional before investing.
+      </p>
+
+    </main>
+  </div>
+
+  <!-- Pass Python data to JS -->
+  <!-- <script>
+    const FORECAST_LABELS = {{ days | tojson }};
+    const FORECAST_PRICES = {{ prices | tojson }};
+    const SYMBOL = {{ symbol | tojson }};
+  </script> -->
+  <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+  <script>
+    document.getElementById('todayDate').textContent =
+      new Date().toLocaleDateString('en', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  </script>
+</body>
+</html>
